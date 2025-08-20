@@ -3,28 +3,40 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const Donation = require("./models/Donation");
-require("dotenv").config();
 const path = require("path");
 const session = require("express-session");
 
 const app = express();
+
+// ---------------- CONFIG ----------------
+// ❌ No dotenv, we hardcode values here
+const MONGO_URI =
+  "mongodb+srv://faransamra45:hzMDmNmSRinNnXiS@cluster0.f9wdtve.mongodb.net/fundraiser?retryWrites=true&w=majority&appName=Cluster0";
+const ADMIN_USER = "JamesJones4301";
+const ADMIN_PASS = "4301James#";
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-app.use(session({
-  secret: "SuperSecretKey123", // ❗ change this in production
-  resave: false,
-  saveUninitialized: true
-}));
-console.log("DEBUG MONGO_URI:", process.env.MONGO_URI);
+app.use(
+  session({
+    secret: "SuperSecretKey123", // ❗ change for production
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-mongoose.connect(process.env.MONGO_URI)
+// ---------------- MONGODB CONNECTION ----------------
+console.log("DEBUG MONGO_URI:", MONGO_URI);
+
+mongoose
+  .connect(MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
-  .catch(err => {
+  .catch((err) => {
     console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
-
 
 // ---------------- API ROUTES ----------------
 app.get("/api/donations", async (req, res) => {
@@ -41,6 +53,7 @@ app.post("/api/donations", async (req, res) => {
     const { number, name, email, phone, address, amount, paymentMethod, message } = req.body;
     const numbers = Array.isArray(number) ? number : [number];
 
+    // Check if any number already exists
     for (const num of numbers) {
       const existingDonation = await Donation.findOne({ number: { $in: [num] } });
       if (existingDonation) {
@@ -56,7 +69,7 @@ app.post("/api/donations", async (req, res) => {
       address,
       amount,
       paymentMethod,
-      message: message || ''
+      message: message || "",
     });
 
     await donation.save();
@@ -79,8 +92,7 @@ app.delete("/api/donations/reset", async (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (username === process.env.ADMIN_USER && password === process.env.ADMIN_PASS) {
-
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
     req.session.authenticated = true;
     return res.redirect("/admin.html");
   }
@@ -103,5 +115,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
+// ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
