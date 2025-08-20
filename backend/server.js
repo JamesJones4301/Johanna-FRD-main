@@ -5,20 +5,19 @@ const cors = require("cors");
 const Donation = require("./models/Donation");
 require("dotenv").config();
 const path = require("path");
+const session = require("express-session");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const session = require("express-session");
-
 app.use(session({
-  secret: "SuperSecretKey123", // change this in production
+  secret: "SuperSecretKey123", // ❗ change this in production
   resave: false,
   saveUninitialized: true
 }));
 
-// Connect to MongoDB Atlas
+// ✅ Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -84,7 +83,7 @@ app.post("/login", (req, res) => {
 
   if (username === "JamesJones4301" && password === "4301James#") {
     req.session.authenticated = true;
-    return res.redirect("/admin");
+    return res.redirect("/admin.html");
   }
 
   res.send("Invalid credentials. <a href='/login.html'>Try again</a>");
@@ -98,26 +97,12 @@ app.get("/admin", (req, res) => {
   }
 });
 
-app.get("/donate", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/donate.html"));
+// ---------------- FRONTEND ----------------
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-// ---------------- FRONTEND ----------------
-if (process.env.NODE_ENV === "production") {
-  // Serve React build in production
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-  });
-} else {
-  // Serve raw HTML files in development
-  app.use(express.static(path.join(__dirname, "../frontend")));
-
-  app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/index.html"));
-  });
-}
-
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
