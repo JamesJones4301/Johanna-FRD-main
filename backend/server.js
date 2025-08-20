@@ -16,17 +16,15 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
+console.log("DEBUG MONGO_URI:", process.env.MONGO_URI);
 
-// ✅ Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ Connected to MongoDB Atlas"))
-.catch(err => {
-  console.error("❌ MongoDB connection error:", err);
-  process.exit(1);
-});
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch(err => {
+    console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
+
 
 // ---------------- API ROUTES ----------------
 app.get("/api/donations", async (req, res) => {
@@ -81,7 +79,8 @@ app.delete("/api/donations/reset", async (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (username === "JamesJones4301" && password === "4301James#") {
+  if (username === process.env.ADMIN_USER && password === process.env.ADMIN_PASS) {
+
     req.session.authenticated = true;
     return res.redirect("/admin.html");
   }
